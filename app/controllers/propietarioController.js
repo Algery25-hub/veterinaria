@@ -23,7 +23,7 @@ export default class PropietarioController {
 
     const res = await inquirer.prompt([
       {
-        type: "list",
+        type: "select",
         name: "op",
         choices: [
           { name: "Ver", value: 1 },
