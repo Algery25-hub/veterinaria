@@ -3,13 +3,20 @@ import chalk from "chalk";
 import fs from "fs";
 import { pause } from "../helpers/helper.js";
 
-const path = "./app/db/mascotas.json";
+const path = "./db/mascotas.json";
+const propietarioPath = "./db/propietarios.json";
 
 export default class MascotaController {
 
   readDB() {
     if (!fs.existsSync(path)) return [];
-    const data = fs.readFileSync(path, "utf-8");
+    const data = fs.readFileSync(path, "utf8");
+    return JSON.parse(data || "[]");
+  }
+
+  readPropietarios() {
+    if (!fs.existsSync(propietarioPath)) return [];
+    const data = fs.readFileSync(propietarioPath, "utf8");
     return JSON.parse(data || "[]");
   }
 
@@ -19,85 +26,189 @@ export default class MascotaController {
 
   async menu() {
     console.clear();
-    console.log(chalk.bgCyan.white("🐶 MASCOTAS"));
+    console.log(chalk.bgCyan.white(" 🐶 MASCOTAS "));
 
-    const res = await inquirer.prompt([
+    const { op } = await inquirer.prompt([
       {
-        type: "select",
+        type: "list",
         name: "op",
+        message: "Seleccione una opción:",
         choices: [
-          { name: "Ver", value: 1 },
-          { name: "Crear", value: 2 },
-          { name: "Editar", value: 3 },
-          { name: "Eliminar", value: 4 },
-          { name: "Salir", value: 0 }
+          { name: "👀 Ver mascotas", value: 1 },
+          { name: "➕ Crear mascota", value: 2 },
+          { name: "✏️ Editar mascota", value: 3 },
+          { name: "🗑️ Eliminar mascota", value: 4 },
+          { name: "⬅️ Volver", value: 0 }
         ]
       }
     ]);
 
-    return res.op;
+    return op;
   }
 
   async create() {
+    const propietarios = this.readPropietarios();
+
+    if (propietarios.length === 0) {
+      console.log(chalk.red("No hay propietarios registrados."));
+      return await pause();
+    }
+
     const data = await inquirer.prompt([
-      { name: "nombre" },
-      { name: "especie" },
-      { name: "edad" },
-      { name: "propietario" }
+      {
+        type: "input",
+        name: "nombre",
+        message: "Nombre:"
+      },
+      {
+        type: "input",
+        name: "especie",
+        message: "Especie:"
+      },
+      {
+        type: "number",
+        name: "edad",
+        message: "Edad:"
+      },
+      {
+        type: "list",
+        name: "propietarioId",
+        message: "Seleccione un propietario:",
+        choices: propietarios.map(p => ({
+          name: `${p.nombre} - ${p.telefono}`,
+          value: p.id
+        }))
+      }
     ]);
+
+    const propietario = propietarios.find(
+      p => p.id === data.propietarioId
+    );
 
     const list = this.readDB();
 
-    list.push({ id: Date.now(), ...data });
+    list.push({
+      id: Date.now(),
+      nombre: data.nombre,
+      especie: data.especie,
+      edad: data.edad,
+      propietarioId: propietario.id,
+      propietario: propietario.nombre
+    });
 
     this.saveDB(list);
 
-    console.log("Creado");
+    console.log(chalk.green("✅ Mascota creada correctamente."));
     await pause();
   }
 
   async read() {
-    console.table(this.readDB());
+    const list = this.readDB();
+
+    if (list.length === 0) {
+      console.log(chalk.yellow("No hay mascotas registradas."));
+    } else {
+      console.table(list);
+    }
+
     await pause();
   }
 
   async update() {
     const list = this.readDB();
 
-    const { id } = await inquirer.prompt([{ name: "id" }]);
+    if (list.length === 0) {
+      console.log(chalk.yellow("No hay mascotas registradas."));
+      return await pause();
+    }
+
+    const { id } = await inquirer.prompt([
+      {
+        type: "input",
+        name: "id",
+        message: "ID de la mascota:"
+      }
+    ]);
 
     const index = list.findIndex(m => m.id == id);
 
     if (index === -1) {
-      console.log("No existe");
+      console.log(chalk.red("La mascota no existe."));
       return await pause();
     }
 
+    const propietarios = this.readPropietarios();
+
     const data = await inquirer.prompt([
-      { name: "nombre" },
-      { name: "especie" },
-      { name: "edad" },
-      { name: "propietario" }
+      {
+        type: "input",
+        name: "nombre",
+        message: "Nuevo nombre:",
+        default: list[index].nombre
+      },
+      {
+        type: "input",
+        name: "especie",
+        message: "Nueva especie:",
+        default: list[index].especie
+      },
+      {
+        type: "number",
+        name: "edad",
+        message: "Nueva edad:",
+        default: list[index].edad
+      },
+      {
+        type: "list",
+        name: "propietarioId",
+        message: "Seleccione el propietario:",
+        choices: propietarios.map(p => ({
+          name: `${p.nombre} - ${p.telefono}`,
+          value: p.id
+        }))
+      }
     ]);
 
-    list[index] = { id: Number(id), ...data };
+    const propietario = propietarios.find(
+      p => p.id === data.propietarioId
+    );
+
+    list[index] = {
+      id: Number(id),
+      nombre: data.nombre,
+      especie: data.especie,
+      edad: data.edad,
+      propietarioId: propietario.id,
+      propietario: propietario.nombre
+    };
 
     this.saveDB(list);
 
-    console.log("Actualizado");
+    console.log(chalk.green("✅ Mascota actualizada."));
     await pause();
   }
 
   async delete() {
     const list = this.readDB();
 
-    const { id } = await inquirer.prompt([{ name: "id" }]);
+    if (list.length === 0) {
+      console.log(chalk.yellow("No hay mascotas registradas."));
+      return await pause();
+    }
+
+    const { id } = await inquirer.prompt([
+      {
+        type: "input",
+        name: "id",
+        message: "ID de la mascota a eliminar:"
+      }
+    ]);
 
     const newList = list.filter(m => m.id != id);
 
     this.saveDB(newList);
 
-    console.log("Eliminado");
+    console.log(chalk.green("✅ Mascota eliminada."));
     await pause();
   }
 
@@ -107,10 +218,23 @@ export default class MascotaController {
     do {
       op = await this.menu();
 
-      if (op === 1) await this.read();
-      if (op === 2) await this.create();
-      if (op === 3) await this.update();
-      if (op === 4) await this.delete();
+      switch (op) {
+        case 1:
+          await this.read();
+          break;
+
+        case 2:
+          await this.create();
+          break;
+
+        case 3:
+          await this.update();
+          break;
+
+        case 4:
+          await this.delete();
+          break;
+      }
 
     } while (op !== 0);
   }

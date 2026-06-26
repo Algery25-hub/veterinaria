@@ -1,1 +1,17 @@
-[]
+[
+  {
+    "id": 1782452393350,
+    "nombre": "jhuhi",
+    "especie": "kjhih",
+    "edad": 8,
+    "propietario": "kjlkjl"
+  },
+  {
+    "id": 1782452711756,
+    "nombre": "jj",
+    "especie": "jk",
+    "edad": 8,
+    "propietarioId": 1782452319929,
+    "propietario": "jiauioih"
+  }
+]
