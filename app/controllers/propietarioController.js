@@ -1,20 +1,11 @@
 import inquirer from "inquirer";
 import chalk from "chalk";
-import fs from "fs";
+import Database from "../db/database.js";
 import { pause } from "../helpers/helper.js";
 
-const path = "./app/db/propietarios.json";
-
 export default class PropietarioController {
-
-  readDB() {
-    if (!fs.existsSync(path)) return [];
-    const data = fs.readFileSync(path, "utf-8");
-    return JSON.parse(data || "[]");
-  }
-
-  saveDB(data) {
-    fs.writeFileSync(path, JSON.stringify(data, null, 2));
+  constructor() {
+    this.db = new Database("./app/db/propietarios.json");
   }
 
   async menu() {
@@ -44,23 +35,26 @@ export default class PropietarioController {
       { name: "telefono" }
     ]);
 
-    const list = this.readDB();
+    const list = this.db.read();
 
-    list.push({ id: Date.now(), ...data });
+    list.push({
+      id: Date.now(),
+      ...data
+    });
 
-    this.saveDB(list);
+    this.db.write(list);
 
     console.log("Creado");
     await pause();
   }
 
   async read() {
-    console.table(this.readDB());
+    console.table(this.db.read());
     await pause();
   }
 
   async update() {
-    const list = this.readDB();
+    const list = this.db.read();
 
     const { id } = await inquirer.prompt([{ name: "id" }]);
 
@@ -78,20 +72,18 @@ export default class PropietarioController {
 
     list[index] = { id: Number(id), ...data };
 
-    this.saveDB(list);
+    this.db.write(list);
 
     console.log("Actualizado");
     await pause();
   }
 
   async delete() {
-    const list = this.readDB();
+    const list = this.db.read();
 
     const { id } = await inquirer.prompt([{ name: "id" }]);
 
-    const newList = list.filter(p => p.id != id);
-
-    this.saveDB(newList);
+    this.db.write(list.filter(p => p.id != id));
 
     console.log("Eliminado");
     await pause();
