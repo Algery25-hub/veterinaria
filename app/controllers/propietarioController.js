@@ -1,11 +1,20 @@
 import inquirer from "inquirer";
 import chalk from "chalk";
-import Database from "node-db-json";
+import fs from "fs";
 import { pause } from "../helpers/helper.js";
 
+const path = "./app/db/propietarios.json";
+
 export default class PropietarioController {
-  constructor() {
-    this.db = new Database("./app/db/propietarios.json");
+
+  readDB() {
+    if (!fs.existsSync(path)) return [];
+    const data = fs.readFileSync(path, "utf-8");
+    return JSON.parse(data || "[]");
+  }
+
+  saveDB(data) {
+    fs.writeFileSync(path, JSON.stringify(data, null, 2));
   }
 
   async menu() {
@@ -35,28 +44,32 @@ export default class PropietarioController {
       { name: "telefono" }
     ]);
 
-    const list = await this.db.read();
+    const list = this.readDB();
+
     list.push({ id: Date.now(), ...data });
 
-    await this.db.write(list);
+    this.saveDB(list);
 
     console.log("Creado");
     await pause();
   }
 
   async read() {
-    console.table(await this.db.read());
+    console.table(this.readDB());
     await pause();
   }
 
   async update() {
-    const list = await this.db.read();
+    const list = this.readDB();
 
     const { id } = await inquirer.prompt([{ name: "id" }]);
 
     const index = list.findIndex(p => p.id == id);
 
-    if (index === -1) return console.log("No existe");
+    if (index === -1) {
+      console.log("No existe");
+      return await pause();
+    }
 
     const data = await inquirer.prompt([
       { name: "nombre" },
@@ -65,18 +78,20 @@ export default class PropietarioController {
 
     list[index] = { id: Number(id), ...data };
 
-    await this.db.write(list);
+    this.saveDB(list);
 
     console.log("Actualizado");
     await pause();
   }
 
   async delete() {
-    const list = await this.db.read();
+    const list = this.readDB();
 
     const { id } = await inquirer.prompt([{ name: "id" }]);
 
-    await this.db.write(list.filter(p => p.id != id));
+    const newList = list.filter(p => p.id != id);
+
+    this.saveDB(newList);
 
     console.log("Eliminado");
     await pause();
