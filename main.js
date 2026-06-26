@@ -3,10 +3,11 @@ import MascotaController from "./app/controllers/mascotaController.js";
 import PropietarioController from "./app/controllers/propietarioController.js";
 
 async function menu() {
-  const res = await inquirer.prompt([
+  const { op } = await inquirer.prompt([
     {
       type: "list",
       name: "op",
+      message: "Seleccione una opción:",
       choices: [
         { name: "Mascotas", value: 1 },
         { name: "Propietarios", value: 2 },
@@ -15,18 +16,18 @@ async function menu() {
     }
   ]);
 
-  return res.op;
+  return op;
 }
 
 async function run(op) {
-  if (op === 1) {
-    const m = new MascotaController();
-    await m.init();
-  }
+  switch (op) {
+    case 1:
+      await new MascotaController().init();
+      break;
 
-  if (op === 2) {
-    const p = new PropietarioController();
-    await p.init();
+    case 2:
+      await new PropietarioController().init();
+      break;
   }
 }
 
