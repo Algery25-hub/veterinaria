@@ -1,33 +1,12 @@
 import inquirer from "inquirer";
 import chalk from "chalk";
-import Database from "../db/database.js";
+import Database from "../../db/database.js";
 import { pause } from "../helpers/helper.js";
 
-<<<<<<< HEAD
 export default class MascotaController {
   constructor() {
-    this.db = new Database("./app/db/mascotas.json");
-=======
-const path = "./db/mascotas.json";
-const propietarioPath = "./db/propietarios.json";
-
-export default class MascotaController {
-
-  readDB() {
-    if (!fs.existsSync(path)) return [];
-    const data = fs.readFileSync(path, "utf8");
-    return JSON.parse(data || "[]");
-  }
-
-  readPropietarios() {
-    if (!fs.existsSync(propietarioPath)) return [];
-    const data = fs.readFileSync(propietarioPath, "utf8");
-    return JSON.parse(data || "[]");
-  }
-
-  saveDB(data) {
-    fs.writeFileSync(path, JSON.stringify(data, null, 2));
->>>>>>> feat/jared-crud
+    this.db = new Database("./db/mascotas.json");
+    this.propietariosDB = new Database("./db/propietarios.json");
   }
 
   async menu() {
@@ -53,7 +32,7 @@ export default class MascotaController {
   }
 
   async create() {
-    const propietarios = this.readPropietarios();
+    const propietarios = this.propietariosDB.read();
 
     if (propietarios.length === 0) {
       console.log(chalk.red("No hay propietarios registrados."));
@@ -79,7 +58,7 @@ export default class MascotaController {
       {
         type: "list",
         name: "propietarioId",
-        message: "Seleccione un propietario:",
+        message: "Seleccione el propietario:",
         choices: propietarios.map(p => ({
           name: `${p.nombre} - ${p.telefono}`,
           value: p.id
@@ -87,59 +66,43 @@ export default class MascotaController {
       }
     ]);
 
-<<<<<<< HEAD
-    const list = this.db.read();
-
-    list.push({
-      id: Date.now(),
-      ...data
-=======
     const propietario = propietarios.find(
       p => p.id === data.propietarioId
     );
 
-    const list = this.readDB();
+    const mascotas = this.db.read();
 
-    list.push({
+    mascotas.push({
       id: Date.now(),
       nombre: data.nombre,
       especie: data.especie,
       edad: data.edad,
       propietarioId: propietario.id,
       propietario: propietario.nombre
->>>>>>> feat/jared-crud
     });
 
-    this.db.write(list);
+    this.db.write(mascotas);
 
-<<<<<<< HEAD
-    console.log(chalk.green("Mascota creada"));
-=======
     console.log(chalk.green("✅ Mascota creada correctamente."));
->>>>>>> feat/jared-crud
     await pause();
   }
 
   async read() {
-<<<<<<< HEAD
-    console.table(this.db.read());
-=======
-    const list = this.readDB();
+    const mascotas = this.db.read();
 
-    if (list.length === 0) {
+    if (mascotas.length === 0) {
       console.log(chalk.yellow("No hay mascotas registradas."));
     } else {
-      console.table(list);
+      console.table(mascotas);
     }
 
->>>>>>> feat/jared-crud
     await pause();
   }
 
   async update() {
-    const list = this.db.read();
+    const mascotas = this.db.read();
 
-    if (list.length === 0) {
+    if (mascotas.length === 0) {
       console.log(chalk.yellow("No hay mascotas registradas."));
       return await pause();
     }
@@ -152,33 +115,33 @@ export default class MascotaController {
       }
     ]);
 
-    const index = list.findIndex(m => m.id == id);
+    const index = mascotas.findIndex(m => m.id == id);
 
     if (index === -1) {
       console.log(chalk.red("La mascota no existe."));
       return await pause();
     }
 
-    const propietarios = this.readPropietarios();
+    const propietarios = this.propietariosDB.read();
 
     const data = await inquirer.prompt([
       {
         type: "input",
         name: "nombre",
         message: "Nuevo nombre:",
-        default: list[index].nombre
+        default: mascotas[index].nombre
       },
       {
         type: "input",
         name: "especie",
         message: "Nueva especie:",
-        default: list[index].especie
+        default: mascotas[index].especie
       },
       {
         type: "number",
         name: "edad",
         message: "Nueva edad:",
-        default: list[index].edad
+        default: mascotas[index].edad
       },
       {
         type: "list",
@@ -195,7 +158,7 @@ export default class MascotaController {
       p => p.id === data.propietarioId
     );
 
-    list[index] = {
+    mascotas[index] = {
       id: Number(id),
       nombre: data.nombre,
       especie: data.especie,
@@ -204,16 +167,16 @@ export default class MascotaController {
       propietario: propietario.nombre
     };
 
-    this.db.write(list);
+    this.db.write(mascotas);
 
     console.log(chalk.green("✅ Mascota actualizada."));
     await pause();
   }
 
   async delete() {
-    const list = this.db.read();
+    const mascotas = this.db.read();
 
-    if (list.length === 0) {
+    if (mascotas.length === 0) {
       console.log(chalk.yellow("No hay mascotas registradas."));
       return await pause();
     }
@@ -226,7 +189,9 @@ export default class MascotaController {
       }
     ]);
 
-    this.db.write(list.filter(m => m.id != id));
+    const nuevasMascotas = mascotas.filter(m => m.id != id);
+
+    this.db.write(nuevasMascotas);
 
     console.log(chalk.green("✅ Mascota eliminada."));
     await pause();
@@ -242,15 +207,12 @@ export default class MascotaController {
         case 1:
           await this.read();
           break;
-
         case 2:
           await this.create();
           break;
-
         case 3:
           await this.update();
           break;
-
         case 4:
           await this.delete();
           break;

@@ -1,26 +1,11 @@
 import inquirer from "inquirer";
 import chalk from "chalk";
-import Database from "../db/database.js";
+import Database from "../../db/database.js";
 import { pause } from "../helpers/helper.js";
 
-<<<<<<< HEAD
 export default class PropietarioController {
   constructor() {
-    this.db = new Database("./app/db/propietarios.json");
-=======
-const path = "./db/propietarios.json";
-
-export default class PropietarioController {
-
-  readDB() {
-    if (!fs.existsSync(path)) return [];
-    const data = fs.readFileSync(path, "utf8");
-    return JSON.parse(data || "[]");
-  }
-
-  saveDB(data) {
-    fs.writeFileSync(path, JSON.stringify(data, null, 2));
->>>>>>> feat/jared-crud
+    this.db = new Database("./db/propietarios.json");
   }
 
   async menu() {
@@ -59,37 +44,39 @@ export default class PropietarioController {
       }
     ]);
 
-    const list = this.db.read();
+    const propietarios = this.db.read();
 
-    list.push({
+    propietarios.push({
       id: Date.now(),
-      ...data
+      nombre: data.nombre,
+      telefono: data.telefono
     });
 
-    this.db.write(list);
+    this.db.write(propietarios);
 
-    console.log(chalk.green("✅ Propietario creado."));
+    console.log(chalk.green("✅ Propietario creado correctamente."));
     await pause();
   }
 
   async read() {
-<<<<<<< HEAD
-    console.table(this.db.read());
-=======
-    const list = this.readDB();
+    const propietarios = this.db.read();
 
-    if (list.length === 0) {
+    if (propietarios.length === 0) {
       console.log(chalk.yellow("No hay propietarios registrados."));
     } else {
-      console.table(list);
+      console.table(propietarios);
     }
 
->>>>>>> feat/jared-crud
     await pause();
   }
 
   async update() {
-    const list = this.db.read();
+    const propietarios = this.db.read();
+
+    if (propietarios.length === 0) {
+      console.log(chalk.yellow("No hay propietarios registrados."));
+      return await pause();
+    }
 
     const { id } = await inquirer.prompt([
       {
@@ -99,10 +86,10 @@ export default class PropietarioController {
       }
     ]);
 
-    const index = list.findIndex(p => p.id == id);
+    const index = propietarios.findIndex(p => p.id == id);
 
     if (index === -1) {
-      console.log(chalk.red("Propietario no encontrado."));
+      console.log(chalk.red("El propietario no existe."));
       return await pause();
     }
 
@@ -110,28 +97,36 @@ export default class PropietarioController {
       {
         type: "input",
         name: "nombre",
-        message: "Nuevo nombre:"
+        message: "Nuevo nombre:",
+        default: propietarios[index].nombre
       },
       {
         type: "input",
         name: "telefono",
-        message: "Nuevo teléfono:"
+        message: "Nuevo teléfono:",
+        default: propietarios[index].telefono
       }
     ]);
 
-    list[index] = {
+    propietarios[index] = {
       id: Number(id),
-      ...data
+      nombre: data.nombre,
+      telefono: data.telefono
     };
 
-    this.db.write(list);
+    this.db.write(propietarios);
 
     console.log(chalk.green("✅ Propietario actualizado."));
     await pause();
   }
 
   async delete() {
-    const list = this.db.read();
+    const propietarios = this.db.read();
+
+    if (propietarios.length === 0) {
+      console.log(chalk.yellow("No hay propietarios registrados."));
+      return await pause();
+    }
 
     const { id } = await inquirer.prompt([
       {
@@ -141,7 +136,9 @@ export default class PropietarioController {
       }
     ]);
 
-    this.db.write(list.filter(p => p.id != id));
+    const nuevoListado = propietarios.filter(p => p.id != id);
+
+    this.db.write(nuevoListado);
 
     console.log(chalk.green("✅ Propietario eliminado."));
     await pause();
