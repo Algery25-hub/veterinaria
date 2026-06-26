@@ -1,20 +1,11 @@
 import inquirer from "inquirer";
 import chalk from "chalk";
-import fs from "fs";
+import Database from "../db/database.js";
 import { pause } from "../helpers/helper.js";
 
-const path = "./app/db/mascotas.json";
-
 export default class MascotaController {
-
-  readDB() {
-    if (!fs.existsSync(path)) return [];
-    const data = fs.readFileSync(path, "utf-8");
-    return JSON.parse(data || "[]");
-  }
-
-  saveDB(data) {
-    fs.writeFileSync(path, JSON.stringify(data, null, 2));
+  constructor() {
+    this.db = new Database("./app/db/mascotas.json");
   }
 
   async menu() {
@@ -46,23 +37,26 @@ export default class MascotaController {
       { name: "propietario" }
     ]);
 
-    const list = this.readDB();
+    const list = this.db.read();
 
-    list.push({ id: Date.now(), ...data });
+    list.push({
+      id: Date.now(),
+      ...data
+    });
 
-    this.saveDB(list);
+    this.db.write(list);
 
-    console.log("Creado");
+    console.log(chalk.green("Mascota creada"));
     await pause();
   }
 
   async read() {
-    console.table(this.readDB());
+    console.table(this.db.read());
     await pause();
   }
 
   async update() {
-    const list = this.readDB();
+    const list = this.db.read();
 
     const { id } = await inquirer.prompt([{ name: "id" }]);
 
@@ -82,20 +76,18 @@ export default class MascotaController {
 
     list[index] = { id: Number(id), ...data };
 
-    this.saveDB(list);
+    this.db.write(list);
 
     console.log("Actualizado");
     await pause();
   }
 
   async delete() {
-    const list = this.readDB();
+    const list = this.db.read();
 
     const { id } = await inquirer.prompt([{ name: "id" }]);
 
-    const newList = list.filter(m => m.id != id);
-
-    this.saveDB(newList);
+    this.db.write(list.filter(m => m.id != id));
 
     console.log("Eliminado");
     await pause();
